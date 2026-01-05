@@ -1,10 +1,12 @@
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://space.ai-builders.com/backend/v1',
-  apiKey: process.env.AI_BUILDER_TOKEN,
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://space.ai-builders.com/backend/v1',
+    apiKey: process.env.AI_BUILDER_TOKEN || 'dummy-key-for-build',
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +19,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!process.env.AI_BUILDER_TOKEN) {
+      return Response.json(
+        { error: 'AI_BUILDER_TOKEN is not configured' },
+        { status: 500 }
+      );
+    }
+
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: model || 'supermind-agent-v1',
       messages: messages,

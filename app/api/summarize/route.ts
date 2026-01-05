@@ -1,10 +1,12 @@
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://space.ai-builders.com/backend/v1',
-  apiKey: process.env.AI_BUILDER_TOKEN,
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://space.ai-builders.com/backend/v1',
+    apiKey: process.env.AI_BUILDER_TOKEN || 'dummy-key-for-build',
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +20,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!process.env.AI_BUILDER_TOKEN) {
+      // 构建时或没有 token 时，返回截取的前15个字符
+      return Response.json({
+        title: message?.slice(0, 15) || '新对话',
+      });
+    }
+
     // 使用 AI 生成简短的标题总结
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'deepseek', // 使用快速且经济的模型来生成总结
       messages: [
